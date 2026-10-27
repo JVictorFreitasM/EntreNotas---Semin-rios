@@ -1,6 +1,8 @@
 # EntreNotas — Seminários
 
-Sistema web responsivo para avaliação de seminários em sala de aula. Os alunos atribuem notas de **0 a 10** aos colegas, enquanto o administrador organiza as apresentações e controla quando a votação fica aberta.
+Sistema web responsivo para avaliação de seminários em sala de aula. Os alunos atribuem notas de **0 a 5** aos colegas, enquanto o administrador organiza as apresentações e controla quando a votação fica aberta.
+
+A média dos alunos vale **até 5 pontos**. O professor acrescenta sua nota, também de até 5 pontos, diretamente no SIGAA; essa segunda nota não é cadastrada aqui. Por exemplo: média da turma **4,20** + professor **4,50** = **8,70**.
 
 As notas são exibidas sem identificar os avaliadores. Cada aluno acompanha apenas os resultados das suas próprias apresentações encerradas.
 
@@ -85,7 +87,7 @@ tools/                Migração dos códigos antigos
 
 A suíte integrada cobre cadastro, autenticação, autorização, vínculo por código, bloqueio de contas, validação de notas, autoavaliação, médias, reabertura e concorrência real entre processos PHP.
 
-Foram aprovadas **38 verificações**, incluindo voto duplicado simultâneo e fechamento concorrente com envio de voto. Veja [como executar os testes](tests/README.md). Use sempre um banco de testes separado e vazio.
+Foram aprovadas **45 verificações**, incluindo voto duplicado simultâneo e fechamento concorrente com envio de voto. Veja [como executar os testes](tests/README.md). Use sempre um banco de testes separado e vazio.
 
 ## Deploy automático
 

@@ -99,7 +99,8 @@ function action(string $action): string {
             if ((int)$p['presenter_id']===(int)$u['id']) fail('Você não pode avaliar sua própria apresentação.');
             if (query('SELECT user_id FROM participation WHERE presentation_id=? AND user_id=?',[$id,$u['id']])->fetch()) fail('Você já avaliou esta apresentação.');
             query('INSERT INTO participation (presentation_id,user_id) VALUES (?,?)',[$id,$u['id']]);
-            query('INSERT INTO grades (id,presentation_id,grade) VALUES (?,?,?)',[bin2hex(random_bytes(16)),$id,$grade]);
+            // Armazenamento canônico 0–10: mantém compatibilidade com as avaliações antigas.
+            query('INSERT INTO grades (id,presentation_id,grade) VALUES (?,?,?)',[bin2hex(random_bytes(16)),$id,number_format((float)$grade * 2,1,'.','')]);
         });
         return 'Avaliação registrada com sucesso. A nota não pode ser alterada.';
     default: fail('Operação desconhecida.');
@@ -114,7 +115,7 @@ function snapshot(): array {
             $presentations=query('SELECT id,real_name,title,status FROM presentations ORDER BY id DESC')->fetchAll();
             foreach ($presentations as &$p) {
                 $p['stats']=stats((int)$p['id']);
-                $p['grades']=query('SELECT grade FROM grades WHERE presentation_id=? ORDER BY grade',[$p['id']])->fetchAll(PDO::FETCH_COLUMN);
+                $p['grades']=query('SELECT grade / 2 AS grade FROM grades WHERE presentation_id=? ORDER BY grade',[$p['id']])->fetchAll(PDO::FETCH_COLUMN);
             } unset($p);
             $users=query('SELECT id,username,blocked FROM users ORDER BY id')->fetchAll();
             return ['role'=>'admin','presentations'=>$presentations,'users'=>$users];

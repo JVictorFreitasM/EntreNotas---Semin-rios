@@ -51,7 +51,7 @@ A separação impede identificação direta pelos painéis e relatórios da apli
 Validado localmente com PHP 8.2.4 e MariaDB 10.4.28:
 
 - Sintaxe de todos os arquivos PHP e `node --check assets/app.js`: aprovada.
-- Suíte integrada: **38 verificações aprovadas**, incluindo fechamento concorrente com envio de voto e voto duplicado simultâneo.
+- Suíte integrada: **45 verificações aprovadas**, incluindo fechamento concorrente com envio de voto e voto duplicado simultâneo.
 - Testes HTTP: página inicial, formulários, cabeçalhos de segurança, API sem autenticação recusada, login/logout administrativo e login/sessão de aluno aprovados.
 
 A suíte não substitui a conferência visual em celular e os testes na hospedagem de destino. O código versionado não contém credenciais reais nem uma conta administrativa pré-criada.
@@ -87,3 +87,9 @@ O workflow `.github/workflows/deploy.yml` publica alterações da branch `main` 
 Somente `index.php`, `.htaccess`, `app/` e `assets/` entram no pacote de envio. `config.php`, SQL, testes, scripts de migração, documentação e prints ficam de fora. A limpeza completa do destino está desativada: arquivos existentes fora do controle dessa automação são preservados, incluindo a configuração de produção. Os arquivos que a automação acompanha podem ser atualizados ou removidos conforme mudanças no Git. Não exclua o arquivo de estado `.entrenotas-deploy-state.json` entre publicações.
 
 A conexão está configurada para FTPS explícito na porta 21. Se houver erro de conexão, confira os dados FTP e a disponibilidade de FTPS no painel; não coloque a senha em arquivos do repositório ou no chat. A primeira execução só poderá ser validada após cadastrar os Secrets corretos.
+
+## Média dos alunos e nota do professor
+
+Cada aluno avalia de **0 a 5**, com até uma casa decimal. O sistema calcula a média da turma nessa mesma escala, com duas casas decimais. Essa média corresponde à metade da nota final. A nota do professor, também de 0 a 5, fica fora da aplicação e é somada pelo professor diretamente no SIGAA. Exemplo: média da turma 4,20 + nota do professor 4,50 = nota final 8,70.
+
+Não reimporte o banco existente para esta atualização. A persistência mantém a escala canônica histórica de 0 a 10: novos votos são multiplicados por dois ao salvar, e os resultados/notas são divididos por dois ao consultar. Assim, um voto antigo de 8,0 aparece como 4,0 na nova escala, sem alterar registros ou perder precisão. Resultados antigos também passam a ser exibidos de forma proporcional. A restrição SQL `chk_grade` permanece 0–10 porque corresponde ao armazenamento interno; o PHP e o JavaScript só aceitam entradas de 0 a 5. A API entrega os valores já convertidos. Notas históricas convertidas podem ter duas casas decimais; novos votos continuam limitados a uma casa.

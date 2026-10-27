@@ -41,6 +41,8 @@ CREATE TABLE participation (
  FOREIGN KEY (user_id) REFERENCES users(id)
 ) ENGINE=InnoDB;
 -- Sem ID sequencial, usuário, IP ou horário: resultados são exibidos ordenados por nota.
+-- Escala interna canônica 0–10 para compatibilidade histórica.
+-- Entrada e exibição são 0–5: salvar nota * 2 e ler nota / 2.
 CREATE TABLE grades (
  id CHAR(32) CHARACTER SET ascii COLLATE ascii_bin PRIMARY KEY,
  presentation_id BIGINT UNSIGNED NOT NULL,

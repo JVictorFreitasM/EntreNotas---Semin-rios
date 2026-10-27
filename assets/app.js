@@ -9,7 +9,7 @@ function el(tag, text, className) {
   return node;
 }
 function resultText(stats) {
-  return stats.average === null ? 'Ainda não há avaliações' : `Média ${stats.average} · ${stats.votes} avaliação(ões)`;
+  return stats.average === null ? 'Ainda não há avaliações' : `Média dos alunos ${stats.average} / 5,00 · ${stats.votes} avaliação(ões)`;
 }
 function badge(status) { return el('span', labels[status], `badge ${status}`); }
 function form(action, values, label, danger = false) {
@@ -54,7 +54,7 @@ function adminPresentations(data) {
   data.presentations.forEach(p => {
     const card = el('article',undefined,'presentation-row');
     card.append(badge(p.status),el('h3',p.title),el('p',`Apresentador: ${p.real_name}`),el('p',resultText(p.stats),'stat-line'));
-    card.append(el('p',p.grades.length ? `Notas em ordem numérica: ${p.grades.map(g=>Number(g).toFixed(1).replace('.',',')).join(' · ')}` : 'Ainda não há avaliações','small muted'));
+    card.append(el('p',p.grades.length ? `Notas em ordem numérica: ${p.grades.map(g=>Number(g).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2})).join(' · ')}` : 'Ainda não há avaliações','small muted'));
     const controls = el('div',undefined,'controls');
     const commands = p.status === 'registered' ? [['start','Iniciar com votação fechada']] : p.status === 'ended' ? [['reopen','Reabrir votação']] : p.status === 'running' ? [['open','Abrir votação'],['end','Encerrar apresentação']] : p.status === 'open' ? [['close','Fechar votação'],['end','Encerrar apresentação']] : [['reopen','Reabrir votação'],['end','Encerrar apresentação']];
     commands.forEach(([command,label])=>controls.append(form('control',{id:p.id,command},label,command==='end')));
@@ -102,7 +102,7 @@ if($('copy-code')) $('copy-code').addEventListener('click',async()=>{
 });
 if($('vote-form')) $('vote-form').addEventListener('submit',event=>{
   const value=$('grade').value.trim().replace(',','.');
-  if(!/^(?:[0-9](?:\.[0-9])?|10(?:\.0)?)$/.test(value)) {event.preventDefault();$('grade').setCustomValidity('Informe uma nota de 0 a 10 com no máximo uma casa decimal.');$('grade').reportValidity();return;}
+  if(!/^(?:[0-4](?:\.[0-9])?|5(?:\.0)?)$/.test(value)) {event.preventDefault();$('grade').setCustomValidity('Informe uma nota de 0 a 5 com no máximo uma casa decimal.');$('grade').reportValidity();return;}
   if(!confirm(`Confirmar nota ${value.replace('.',',')}? Após o envio, ela não poderá ser alterada.`)) event.preventDefault();
 });
 if($('grade')) $('grade').addEventListener('input',()=> $('grade').setCustomValidity(''));

@@ -72,11 +72,11 @@ function transaction(callable $fn): mixed {
 }
 function parseGrade(string $raw): string {
     $raw=str_replace(',','.',trim($raw));
-    if (!preg_match('/\A(?:[0-9](?:\.[0-9])?|10(?:\.0)?)\z/D',$raw)) fail('Informe uma nota de 0 a 10, com no máximo uma casa decimal.');
+    if (!preg_match('/\A(?:[0-4](?:\.[0-9])?|5(?:\.0)?)\z/D',$raw)) fail('Informe uma nota de 0 a 5, com no máximo uma casa decimal.');
     return number_format((float)$raw,1,'.','');
 }
 function stats(int $id): array {
-    $r=query('SELECT COUNT(*) AS votes, AVG(grade) AS average FROM grades WHERE presentation_id=?',[$id])->fetch();
+    $r=query('SELECT COUNT(*) AS votes, AVG(grade) / 2 AS average FROM grades WHERE presentation_id=?',[$id])->fetch();
     return ['votes'=>(int)$r['votes'],'average'=>$r['average']===null?null:number_format((float)$r['average'],2,',','.')];
 }
 function statusLabel(string $s): string {

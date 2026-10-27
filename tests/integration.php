@@ -6,7 +6,7 @@ require dirname(__DIR__).'/app/bootstrap.php';
 require dirname(__DIR__).'/app/actions.php';
 if (($argv[1] ?? '') === 'worker') {
     $_SESSION=['role'=>'student','id'=>(int)$argv[2],'csrf'=>'test-csrf'];
-    $_POST=['csrf'=>'test-csrf','action'=>'vote','presentation_id'=>$argv[3],'grade'=>'6,5'];
+    $_POST=['csrf'=>'test-csrf','action'=>'vote','presentation_id'=>$argv[3],'grade'=>'3,5'];
     try { action('vote'); echo 'accepted'; } catch (DomainException $ex) { echo 'rejected'; }
     exit;
 }
@@ -51,21 +51,30 @@ try {
     check(query('SELECT status FROM presentations WHERE id=?',[$p])->fetchColumn()==='running','inicia fechado');
     denied(fn()=>act('control',['id'=>(string)$other,'command'=>'start']),'uma apresentação ativa');
     asStudent($voter);
-    denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'8,0']),'voto antes de abrir');
+    denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4,0']),'voto antes de abrir');
     asAdmin($adminId);act('control',['id'=>(string)$p,'command'=>'open']);
-    asStudent($presenter); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'10']),'autoavaliação');
+    asStudent($presenter); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'5']),'autoavaliação');
     asStudent($voter);
-    foreach(['-1','10.1','3.25','abc','1e1',''] as $grade) denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>$grade]),'nota inválida');
-    act('vote',['presentation_id'=>(string)$p,'grade'=>'7,5']);
-    denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'9']),'duplicidade');
-    asStudent($voter2);act('vote',['presentation_id'=>(string)$p,'grade'=>'8.0']);
-    check(stats($p)===['votes'=>2,'average'=>'7,75'],'média decimal');
+    foreach(['-1','5.1','6','10','10.1','3.25','abc','1e1',''] as $grade) denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>$grade]),'nota inválida');
+    act('vote',['presentation_id'=>(string)$p,'grade'=>'4,2']);
+    denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'duplicidade');
+    asStudent($voter2);act('vote',['presentation_id'=>(string)$p,'grade'=>'4.0']);
+    check(stats($p)===['votes'=>2,'average'=>'4,10'],'média decimal na escala 0–5');
+    check(parseGrade('0')==='0.0' && parseGrade('5,0')==='5.0','limites inclusivos 0 e 5');
+    check((float)query('SELECT MIN(grade) FROM grades WHERE presentation_id=?',[$p])->fetchColumn()===8.0,'persistência compatível na escala interna');
+    asAdmin($adminId);
+    $visible=snapshot()['presentations'];
+    $shown=array_values(array_filter($visible,fn($row)=>(int)$row['id']===$p))[0];
+    check(array_map('floatval',$shown['grades'])===[4.0,4.2],'notas administrativas na escala 0–5');
+    // Registro no formato anterior: 8/10 deve aparecer como 4/5, sem migração.
+    query('INSERT INTO grades (id,presentation_id,grade) VALUES (?,?,?)',[bin2hex(random_bytes(16)),$other,'8.0']);
+    check(stats($other)===['votes'=>1,'average'=>'4,00'],'compatibilidade com notas antigas');
     asAdmin($adminId); act('control',['id'=>(string)$p,'command'=>'close']);
-    asStudent($racer); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'9']),'voto após fechar');
+    asStudent($racer); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'voto após fechar');
     asAdmin($adminId); act('control',['id'=>(string)$p,'command'=>'reopen']);
-    asStudent($voter); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'9']),'reabrir preserva duplicidade');
+    asStudent($voter); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'reabrir preserva duplicidade');
     asAdmin($adminId);act('block',['id'=>(string)$racer,'blocked'=>'1']);
-    asStudent($racer); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'9']),'sessão bloqueada');
+    asStudent($racer); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'sessão bloqueada');
     denied(fn()=>act('login',['username'=>'reviewer_race','password'=>$password]),'login bloqueado');
     asAdmin($adminId);act('block',['id'=>(string)$racer,'blocked'=>'0']);
     // Concorrência real: a transação de fechamento mantém o bloqueio enquanto outro processo tenta votar.

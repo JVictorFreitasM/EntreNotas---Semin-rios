@@ -16,8 +16,8 @@ Para validação visual/manual no domínio publicado:
 
 1. Crie duas contas em perfis de navegador diferentes. Confira nome anônimo, código privado e cópia. Saia e entre de novo.
 2. Em outro perfil, entre como administrador, cadastre uma apresentação com o código da primeira conta. Confira que nenhuma confirmação, resultado ou lista revela a associação com o usuário ou nome anônimo.
-3. Inicie com votação fechada; abra. A segunda conta deve acompanhar a alteração em até 10 segundos e conseguir votar 7,5. A primeira não pode avaliar a própria apresentação.
-4. Tente duplicar, enviar 10,1, -1 ou 3,25, e enviar via POST sem CSRF. As tentativas devem ser recusadas.
+3. Inicie com votação fechada; abra. A segunda conta deve acompanhar a alteração em até 10 segundos e conseguir votar 4,2. A primeira não pode avaliar a própria apresentação.
+4. Tente duplicar, enviar 5,1, 6, 10, -1 ou 3,25, e enviar via POST sem CSRF. As tentativas devem ser recusadas.
 5. Feche e reabra. A quantidade de votos não muda e quem já votou continua impedido. Encerre: só o apresentador vê sua média; os outros não têm acesso a ela.
 6. Tente iniciar duas apresentações e reabrir a anterior com outra ativa. O servidor deve impedir.
 7. Bloqueie uma conta já autenticada: ela deve perder o acesso e não poder votar. Desbloqueie e entre novamente.
