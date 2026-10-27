@@ -58,3 +58,13 @@ CREATE TABLE rate_limits (
  expires_at BIGINT UNSIGNED NOT NULL,
  INDEX idx_rate_expiry (expires_at)
 ) ENGINE=InnoDB;
+
+-- A nota do professor não participa da média dos votos anônimos.
+CREATE TABLE teacher_grades (
+ presentation_id BIGINT UNSIGNED PRIMARY KEY,
+ grade DECIMAL(2,1) NOT NULL,
+ admin_id INT UNSIGNED NOT NULL,
+ FOREIGN KEY (presentation_id) REFERENCES presentations(id),
+ FOREIGN KEY (admin_id) REFERENCES admins(id),
+ CONSTRAINT chk_teacher_grade CHECK (grade >= 0 AND grade <= 5)
+) ENGINE=InnoDB;

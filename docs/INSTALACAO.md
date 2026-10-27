@@ -51,7 +51,7 @@ A separação impede identificação direta pelos painéis e relatórios da apli
 Validado localmente com PHP 8.2.4 e MariaDB 10.4.28:
 
 - Sintaxe de todos os arquivos PHP e `node --check assets/app.js`: aprovada.
-- Suíte integrada: **45 verificações aprovadas**, incluindo fechamento concorrente com envio de voto e voto duplicado simultâneo.
+- Suíte integrada: **64 verificações aprovadas**, incluindo fechamento concorrente com envio de voto e voto duplicado simultâneo.
 - Testes HTTP: página inicial, formulários, cabeçalhos de segurança, API sem autenticação recusada, login/logout administrativo e login/sessão de aluno aprovados.
 
 A suíte não substitui a conferência visual em celular e os testes na hospedagem de destino. O código versionado não contém credenciais reais nem uma conta administrativa pré-criada.
@@ -90,6 +90,14 @@ A conexão está configurada para FTPS explícito na porta 21. Se houver erro de
 
 ## Média dos alunos e nota do professor
 
-Cada aluno avalia de **0 a 5**, com até uma casa decimal. O sistema calcula a média da turma nessa mesma escala, com duas casas decimais. Essa média corresponde à metade da nota final. A nota do professor, também de 0 a 5, fica fora da aplicação e é somada pelo professor diretamente no SIGAA. Exemplo: média da turma 4,20 + nota do professor 4,50 = nota final 8,70.
+Cada aluno avalia de **0 a 5**, com até uma casa decimal. O sistema calcula a média da turma nessa mesma escala, com duas casas decimais. Essa média corresponde à metade da nota final. O professor registra sua nota, também de 0 a 5 e com até uma casa decimal, no formulário da apresentação no painel administrativo. Pode atualizar a nota posteriormente. O administrador vê as duas parcelas e a soma; o aluno vê esses resultados apenas nas suas próprias apresentações encerradas. O total fica pendente se faltar a nota do professor ou se não houver avaliações da turma. Zero é uma nota válida e não é tratado como ausência. A nota total pode então ser lançada no SIGAA. Exemplo: média da turma 4,20 + nota do professor 4,50 = nota final 8,70.
 
 Não reimporte o banco existente para esta atualização. A persistência mantém a escala canônica histórica de 0 a 10: novos votos são multiplicados por dois ao salvar, e os resultados/notas são divididos por dois ao consultar. Assim, um voto antigo de 8,0 aparece como 4,0 na nova escala, sem alterar registros ou perder precisão. Resultados antigos também passam a ser exibidos de forma proporcional. A restrição SQL `chk_grade` permanece 0–10 porque corresponde ao armazenamento interno; o PHP e o JavaScript só aceitam entradas de 0 a 5. A API entrega os valores já convertidos. Notas históricas convertidas podem ter duas casas decimais; novos votos continuam limitados a uma casa.
+
+### Atualização do banco para a nota do professor
+
+A tabela adicional `teacher_grades` é criada automaticamente na primeira consulta autenticada ao painel administrativo, antes da transação de leitura, sem modificar contas, votos ou apresentações. Não reimporte o schema completo no banco existente. A tabela já consta em `schema.sql` para instalações novas.
+
+Se o usuário MySQL da hospedagem não tiver permissão de criar tabelas, importe apenas `database/teacher-grades.sql` no banco existente via phpMyAdmin. Cada apresentação tem no máximo uma nota do professor. Ela é armazenada em escala 0–5 separadamente dos votos anônimos e não entra na contagem ou média dos votos. A soma usa a média da turma arredondada a duas casas, a mesma exibida nas telas.
+
+No painel, preencha **Nota do professor · 0 a 5** e clique em **Salvar nota do professor**. Para corrigir, altere o valor e clique em **Atualizar nota do professor**. A atualização automática preserva o campo enquanto estiver em edição.

@@ -24,3 +24,5 @@ Para validação visual/manual no domínio publicado:
 8. Preencha metade da nota e espere a atualização automática, ou retorne à aba. O conteúdo deve permanecer. Faça o mesmo no cadastro administrativo. Desconecte a rede: uma mensagem discreta deve aparecer e a consulta deve retornar após a conexão voltar.
 9. Confira em celular (largura de 360px) e computador, navegação por teclado, foco e contraste. Teste a cópia do código em HTTPS e o fallback de seleção manual.
 10. Após instalar, tente novamente `?view=install`: deve mostrar login e nunca criar outro administrador. Confira os bloqueios HTTP dos arquivos sensíveis.
+
+A suíte também cobre a criação automática da tabela em bancos antigos, autorização do lançamento da nota do professor, faixa 0–5, nota zero, atualização sem duplicar registros, soma final, ausência de avaliações e acesso do aluno ao próprio resultado após o encerramento.

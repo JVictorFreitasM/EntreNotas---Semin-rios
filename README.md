@@ -2,7 +2,7 @@
 
 Sistema web responsivo para avaliação de seminários em sala de aula. Os alunos atribuem notas de **0 a 5** aos colegas, enquanto o administrador organiza as apresentações e controla quando a votação fica aberta.
 
-A média dos alunos vale **até 5 pontos**. O professor acrescenta sua nota, também de até 5 pontos, diretamente no SIGAA; essa segunda nota não é cadastrada aqui. Por exemplo: média da turma **4,20** + professor **4,50** = **8,70**.
+A média dos alunos vale **até 5 pontos**. O professor registra sua nota, também de até 5 pontos, no painel administrativo. O sistema soma as duas partes e mostra a nota total de até 10 pontos ao administrador e ao aluno responsável, após o encerramento. Por exemplo: média da turma **4,20** + professor **4,50** = **8,70**.
 
 As notas são exibidas sem identificar os avaliadores. Cada aluno acompanha apenas os resultados das suas próprias apresentações encerradas.
 
@@ -18,6 +18,7 @@ As notas são exibidas sem identificar os avaliadores. Cada aluno acompanha apen
 - **Área administrativa:** cadastro de seminários por nome real, tema e código privado; gerenciamento de contas com bloqueio e desbloqueio.
 - **Controle da votação:** iniciar com votação fechada, abrir, fechar, reabrir e encerrar, com apenas uma apresentação ativa por vez.
 - **Voto único:** uma avaliação por conta em cada apresentação, sem autoavaliação, alteração ou exclusão da nota enviada.
+- **Nota do professor:** lançamento e atualização de 0 a 5 pelo administrador, com detalhamento da média da turma, nota do professor e soma final.
 - **Resultados automáticos:** notas com uma casa decimal e médias com duas casas, preservadas ao reabrir votações.
 - **Atualização a cada 10 segundos:** acompanhamento sem recarregar a página inteira nem apagar o formulário em preenchimento.
 - **Interface responsiva:** paleta azul e layout para celulares e computadores.
@@ -87,7 +88,7 @@ tools/                Migração dos códigos antigos
 
 A suíte integrada cobre cadastro, autenticação, autorização, vínculo por código, bloqueio de contas, validação de notas, autoavaliação, médias, reabertura e concorrência real entre processos PHP.
 
-Foram aprovadas **45 verificações**, incluindo voto duplicado simultâneo e fechamento concorrente com envio de voto. Veja [como executar os testes](tests/README.md). Use sempre um banco de testes separado e vazio.
+Foram aprovadas **64 verificações**, incluindo voto duplicado simultâneo e fechamento concorrente com envio de voto. Veja [como executar os testes](tests/README.md). Use sempre um banco de testes separado e vazio.
 
 ## Deploy automático
 

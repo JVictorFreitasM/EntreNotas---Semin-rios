@@ -11,6 +11,27 @@ function el(tag, text, className) {
 function resultText(stats) {
   return stats.average === null ? 'Ainda não há avaliações' : `Média dos alunos ${stats.average} / 5,00 · ${stats.votes} avaliação(ões)`;
 }
+function totalText(stats) {
+  if (stats.total !== null) return `Nota total: ${stats.total} / 10,00`;
+  return stats.teacher === null ? 'Nota total pendente · aguardando nota do professor' : 'Nota total pendente · aguardando avaliações da turma';
+}
+function teacherText(stats) {
+  return stats.teacher === null ? 'Professor: nota pendente' : `Professor: ${stats.teacher} / 5,00`;
+}
+const teacherDrafts = new Map();
+function teacherForm(p) {
+  const f = form('teacher_grade',{id:p.id},p.stats.teacher === null ? 'Salvar nota do professor' : 'Atualizar nota do professor');
+  f.className='teacher-grade-form';
+  const id=`teacher-grade-${p.id}`;
+  const label=el('label','Nota do professor · 0 a 5'); label.htmlFor=id;
+  const input=el('input'); input.id=id; input.name='teacher_grade'; input.inputMode='decimal';
+  input.required=true; input.maxLength=3; input.placeholder='Ex.: 4,5';
+  input.pattern='(?:[0-4](?:[.,][0-9])?|5(?:[.,]0)?)';
+  input.value=teacherDrafts.has(String(p.id)) ? teacherDrafts.get(String(p.id)) : (p.stats.teacher ?? '').replace(/0$/, '');
+  input.addEventListener('input',()=>teacherDrafts.set(String(p.id),input.value));
+  f.prepend(label,input);
+  return f;
+}
 function badge(status) { return el('span', labels[status], `badge ${status}`); }
 function form(action, values, label, danger = false) {
   const f = el('form'); f.method = 'post';
@@ -46,7 +67,7 @@ function student(data) {
 function studentResults(data) {
   const box = $('student-results'); box.replaceChildren();
   if (!data.results.length) {box.append(el('p','Seus resultados aparecerão aqui após o encerramento das suas apresentações.','muted')); return;}
-  data.results.forEach(p => {const row=el('article',undefined,'result-row'); row.append(el('h3',p.title),el('p',resultText(p.stats))); box.append(row);});
+  data.results.forEach(p => {const row=el('article',undefined,'result-row'); row.append(el('h3',p.title),el('p',resultText(p.stats)),el('p',teacherText(p.stats)),el('p',totalText(p.stats),'stat-line')); box.append(row);});
 }
 function adminPresentations(data) {
   const box = $('admin-presentations'); box.replaceChildren();
@@ -55,6 +76,7 @@ function adminPresentations(data) {
     const card = el('article',undefined,'presentation-row');
     card.append(badge(p.status),el('h3',p.title),el('p',`Apresentador: ${p.real_name}`),el('p',resultText(p.stats),'stat-line'));
     card.append(el('p',p.grades.length ? `Notas em ordem numérica: ${p.grades.map(g=>Number(g).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:2})).join(' · ')}` : 'Ainda não há avaliações','small muted'));
+    card.append(el('p',teacherText(p.stats)),el('p',totalText(p.stats),'stat-line'),teacherForm(p));
     const controls = el('div',undefined,'controls');
     const commands = p.status === 'registered' ? [['start','Iniciar com votação fechada']] : p.status === 'ended' ? [['reopen','Reabrir votação']] : p.status === 'running' ? [['open','Abrir votação'],['end','Encerrar apresentação']] : p.status === 'open' ? [['close','Fechar votação'],['end','Encerrar apresentação']] : [['reopen','Reabrir votação'],['end','Encerrar apresentação']];
     commands.forEach(([command,label])=>controls.append(form('control',{id:p.id,command},label,command==='end')));
@@ -84,7 +106,7 @@ async function refresh() {
     if(role==='student') {student(data);studentResults(data);}
     else {
       const serialized=JSON.stringify(data);
-      if(serialized!==lastAdminState) {adminPresentations(data);adminUsers(data);lastAdminState=serialized;}
+      if(serialized!==lastAdminState && !document.activeElement?.closest('.teacher-grade-form')) {adminPresentations(data);adminUsers(data);lastAdminState=serialized;}
     }
     $('connection-status').textContent='';
   } catch(error) {

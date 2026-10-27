@@ -75,9 +75,37 @@ function parseGrade(string $raw): string {
     if (!preg_match('/\A(?:[0-4](?:\.[0-9])?|5(?:\.0)?)\z/D',$raw)) fail('Informe uma nota de 0 a 5, com no máximo uma casa decimal.');
     return number_format((float)$raw,1,'.','');
 }
+function ensureTeacherGrades(): void {
+    try { query('SELECT presentation_id FROM teacher_grades LIMIT 0'); }
+    catch (PDOException $ex) {
+        if (($ex->errorInfo[1] ?? null) !== 1146) throw $ex;
+        // Migração aditiva: executada pelo administrador fora de transações de votação.
+        query('CREATE TABLE IF NOT EXISTS teacher_grades (
+            presentation_id BIGINT UNSIGNED PRIMARY KEY,
+            grade DECIMAL(2,1) NOT NULL,
+            admin_id INT UNSIGNED NOT NULL,
+            FOREIGN KEY (presentation_id) REFERENCES presentations(id),
+            FOREIGN KEY (admin_id) REFERENCES admins(id),
+            CONSTRAINT chk_teacher_grade CHECK (grade >= 0 AND grade <= 5)
+        ) ENGINE=InnoDB');
+    }
+}
 function stats(int $id): array {
     $r=query('SELECT COUNT(*) AS votes, AVG(grade) / 2 AS average FROM grades WHERE presentation_id=?',[$id])->fetch();
-    return ['votes'=>(int)$r['votes'],'average'=>$r['average']===null?null:number_format((float)$r['average'],2,',','.')];
+    $teacher=null;
+    try {
+        $value=query('SELECT grade FROM teacher_grades WHERE presentation_id=?',[$id])->fetchColumn();
+        if ($value!==false) $teacher=(float)$value;
+    } catch (PDOException $ex) {
+        if (($ex->errorInfo[1] ?? null)!==1146) throw $ex;
+    }
+    $average=$r['average']===null?null:round((float)$r['average'],2);
+    return [
+        'votes'=>(int)$r['votes'],
+        'average'=>$average===null?null:number_format($average,2,',','.'),
+        'teacher'=>$teacher===null?null:number_format($teacher,2,',','.'),
+        'total'=>$average===null || $teacher===null?null:number_format($average+$teacher,2,',','.'),
+    ];
 }
 function statusLabel(string $s): string {
     return ['registered'=>'Apresentação cadastrada','running'=>'Em andamento · votação ainda fechada','open'=>'Votação aberta','closed'=>'Votação fechada','ended'=>'Apresentação encerrada'][$s] ?? $s;

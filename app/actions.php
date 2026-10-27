@@ -54,6 +54,17 @@ function action(string $action): string {
         if (!$presenter) fail('Código inválido ou conta indisponível.');
         query('INSERT INTO presentations (presenter_id,real_name,title) VALUES (?,?,?)',[$presenter,$name,$title]);
         return 'Código válido e apresentação vinculada.';
+    case 'teacher_grade':
+        admin();
+        $id=input('id',20); $grade=parseGrade(input('teacher_grade',10));
+        if (!ctype_digit($id)) fail('Apresentação inválida.');
+        ensureTeacherGrades();
+        transaction(function() use ($id,$grade) {
+            stateLock();
+            if (!query('SELECT id FROM presentations WHERE id=? FOR UPDATE',[$id])->fetch()) fail('Apresentação não encontrada.');
+            query('INSERT INTO teacher_grades (presentation_id,grade,admin_id) VALUES (?,?,?) ON DUPLICATE KEY UPDATE grade=VALUES(grade),admin_id=VALUES(admin_id)',[$id,$grade,$_SESSION['id']]);
+        });
+        return 'Nota do professor salva. A nota total foi atualizada.';
     case 'block':
         admin();
         $id=input('id',20); $blocked=input('blocked',1);
@@ -107,6 +118,7 @@ function action(string $action): string {
     }
 }
 function snapshot(): array {
+    if (($_SESSION['role'] ?? '')==='admin') { admin(); ensureTeacherGrades(); }
     return transaction(function() {
         // Snapshot coerente entre estado, participação e resultados.
         $role=$_SESSION['role'] ?? '';

@@ -45,7 +45,9 @@ try {
     $p=(int)db()->lastInsertId();
     act('create',['real_name'=>'Apresentador real','title'=>'Seminário B','private_code'=>$code]);
     $other=(int)db()->lastInsertId();
+    query('DROP TABLE teacher_grades'); // Apenas no banco vazio exclusivo desta suíte.
     $adminData=snapshot();
+    check((bool)query('SELECT presentation_id FROM teacher_grades LIMIT 0'),'migração automática de banco anterior');
     check(!str_contains(json_encode($adminData),$code) && !isset($adminData['presentations'][0]['presenter_id']),'painel não retorna vínculos privados');
     act('control',['id'=>(string)$p,'command'=>'start']);
     check(query('SELECT status FROM presentations WHERE id=?',[$p])->fetchColumn()==='running','inicia fechado');
@@ -59,7 +61,7 @@ try {
     act('vote',['presentation_id'=>(string)$p,'grade'=>'4,2']);
     denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'duplicidade');
     asStudent($voter2);act('vote',['presentation_id'=>(string)$p,'grade'=>'4.0']);
-    check(stats($p)===['votes'=>2,'average'=>'4,10'],'média decimal na escala 0–5');
+    check(stats($p)===['votes'=>2,'average'=>'4,10','teacher'=>null,'total'=>null],'média decimal na escala 0–5');
     check(parseGrade('0')==='0.0' && parseGrade('5,0')==='5.0','limites inclusivos 0 e 5');
     check((float)query('SELECT MIN(grade) FROM grades WHERE presentation_id=?',[$p])->fetchColumn()===8.0,'persistência compatível na escala interna');
     asAdmin($adminId);
@@ -68,7 +70,33 @@ try {
     check(array_map('floatval',$shown['grades'])===[4.0,4.2],'notas administrativas na escala 0–5');
     // Registro no formato anterior: 8/10 deve aparecer como 4/5, sem migração.
     query('INSERT INTO grades (id,presentation_id,grade) VALUES (?,?,?)',[bin2hex(random_bytes(16)),$other,'8.0']);
-    check(stats($other)===['votes'=>1,'average'=>'4,00'],'compatibilidade com notas antigas');
+    check(stats($other)===['votes'=>1,'average'=>'4,00','teacher'=>null,'total'=>null],'compatibilidade com notas antigas');
+    asStudent($voter);
+    denied(fn()=>act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>'5']),'aluno não cadastra nota do professor');
+    asAdmin($adminId);
+    foreach (['-1','5.1','6','10','4.25',''] as $invalid) denied(fn()=>act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>$invalid]),'nota do professor inválida');
+    denied(fn()=>act('teacher_grade',['id'=>'999999','teacher_grade'=>'4']),'apresentação inexistente');
+    $_POST=['csrf'=>'invalid','id'=>(string)$p,'teacher_grade'=>'5'];
+    denied(fn()=>action('teacher_grade'),'CSRF da nota do professor');
+    act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>'4,5']);
+    check(stats($p)===['votes'=>2,'average'=>'4,10','teacher'=>'4,50','total'=>'8,60'],'média mais nota do professor');
+    check(stats($p)['votes']===2,'nota do professor não entra na contagem de votos');
+    act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>'0']);
+    check(stats($p)['teacher']==='0,00' && stats($p)['total']==='4,10','zero do professor não é pendência');
+    act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>'5']);
+    check(stats($p)['teacher']==='5,00' && stats($p)['total']==='9,10','professor pode atualizar nota sem duplicação');
+    query('DELETE FROM grades WHERE presentation_id=?',[$other]);
+    act('teacher_grade',['id'=>(string)$other,'teacher_grade'=>'5']);
+    check(stats($other)['total']===null && stats($other)['average']===null,'sem votos da turma não produz total');
+    $boundaryId=bin2hex(random_bytes(16));
+    query('INSERT INTO grades (id,presentation_id,grade) VALUES (?,?,?)',[$boundaryId,$other,'10.0']);
+    check(stats($other)['total']==='10,00','nota final máxima de dez pontos');
+    query('UPDATE grades SET grade=0 WHERE id=?',[$boundaryId]);
+    act('teacher_grade',['id'=>(string)$other,'teacher_grade'=>'0']);
+    check(stats($other)['total']==='0,00','zero da turma e professor resulta em zero');
+    query('DELETE FROM grades WHERE id=?',[$boundaryId]);
+    act('teacher_grade',['id'=>(string)$p,'teacher_grade'=>'4,5']);
+    asStudent($presenter); check(snapshot()['results']===[],'resultado não aparece antes de encerrar');
     asAdmin($adminId); act('control',['id'=>(string)$p,'command'=>'close']);
     asStudent($racer); denied(fn()=>act('vote',['presentation_id'=>(string)$p,'grade'=>'4']),'voto após fechar');
     asAdmin($adminId); act('control',['id'=>(string)$p,'command'=>'reopen']);
@@ -99,6 +127,7 @@ try {
     check(stats($p)['votes']===3,'participação e nota atômicas');
     act('control',['id'=>(string)$p,'command'=>'end']);
     asStudent($presenter);check(count(snapshot()['results'])===1,'resultado próprio encerrado');
+    check(snapshot()['results'][0]['stats']['total']==='8,40','aluno vê soma final de suas apresentações encerradas');
     asStudent($voter);check(snapshot()['results']===[],'não consulta média de colegas');
     asAdmin($adminId);act('control',['id'=>(string)$other,'command'=>'start']);
     denied(fn()=>act('control',['id'=>(string)$p,'command'=>'reopen']),'reabrir exige encerrar ativa');
