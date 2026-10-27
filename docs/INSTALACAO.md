@@ -63,3 +63,27 @@ Referências da hospedagem: [migração e importação de banco](https://forum.i
 O código privado usa quatro dígitos, de `0000` a `9999`. Ele serve apenas para vincular apresentações e não substitui a senha. O espaço menor torna o código mais fácil de adivinhar; a consulta continua restrita ao administrador e limitada por tentativas. Não compartilhe publicamente.
 
 Em bancos antigos, execute uma vez `php tools/migrate-codes.php` na raiz do projeto. A migração troca somente os códigos antigos, preservando contas, senhas, apresentações e votos. Peça aos alunos que consultem novamente seu código após a migração. Não é necessário reimportar o SQL ou apagar o banco. O script é exclusivo de linha de comando.
+
+## Publicação automática pelo GitHub
+
+O workflow `.github/workflows/deploy.yml` publica alterações da branch `main` por FTPS. Ele é executado quando mudam `index.php`, `.htaccess`, `app/`, `assets/` ou o próprio workflow. Alterações somente na documentação não disparam publicação. Também é possível executá-lo manualmente pela aba **Actions → Publicar no InfinityFree → Run workflow**.
+
+### Configurar uma vez
+
+1. Mantenha no servidor o `config.php` de produção, o banco importado e o administrador já instalado. O workflow não cria esses itens nem executa SQL.
+2. No painel InfinityFree, abra os dados FTP da conta que hospeda o domínio. Use o servidor, usuário e senha **FTP**, e não o hostname/senha do banco MySQL.
+3. No repositório GitHub, entre em **Settings → Secrets and variables → Actions → New repository secret** e cadastre:
+
+   | Secret | Valor |
+   | --- | --- |
+   | `FTP_SERVER` | Hostname FTP informado pelo painel, sem `ftp://` |
+   | `FTP_USERNAME` | Usuário FTP da hospedagem |
+   | `FTP_PASSWORD` | Senha FTP da hospedagem |
+   | `FTP_SERVER_DIR` | Caminho FTP da pasta pública do domínio, terminando em `/` |
+
+4. Confirme o caminho no gerenciador de arquivos ou em um cliente FTP. Ele pode ser `/htdocs/` ou `/seminarios.freehosting.dev/htdocs/`, dependendo da organização da conta. Use **o caminho real do seu domínio**; não copie o exemplo sem verificar.
+5. Execute o workflow manualmente em **Actions** e acompanhe os logs. Depois da configuração, pushes que alteram os arquivos da aplicação publicam automaticamente.
+
+Somente `index.php`, `.htaccess`, `app/` e `assets/` entram no pacote de envio. `config.php`, SQL, testes, scripts de migração, documentação e prints ficam de fora. A limpeza completa do destino está desativada: arquivos existentes fora do controle dessa automação são preservados, incluindo a configuração de produção. Os arquivos que a automação acompanha podem ser atualizados ou removidos conforme mudanças no Git. Não exclua o arquivo de estado `.entrenotas-deploy-state.json` entre publicações.
+
+A conexão está configurada para FTPS explícito na porta 21. Se houver erro de conexão, confira os dados FTP e a disponibilidade de FTPS no painel; não coloque a senha em arquivos do repositório ou no chat. A primeira execução só poderá ser validada após cadastrar os Secrets corretos.

@@ -86,3 +86,7 @@ tools/                Migração dos códigos antigos
 A suíte integrada cobre cadastro, autenticação, autorização, vínculo por código, bloqueio de contas, validação de notas, autoavaliação, médias, reabertura e concorrência real entre processos PHP.
 
 Foram aprovadas **38 verificações**, incluindo voto duplicado simultâneo e fechamento concorrente com envio de voto. Veja [como executar os testes](tests/README.md). Use sempre um banco de testes separado e vazio.
+
+## Deploy automático
+
+O repositório inclui um workflow de GitHub Actions que envia os arquivos da aplicação ao InfinityFree por FTPS após alterações na `main`, preservando o `config.php` da hospedagem. Configure os Secrets `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` e `FTP_SERVER_DIR` conforme o [guia de publicação automática](docs/INSTALACAO.md#publicação-automática-pelo-github).
